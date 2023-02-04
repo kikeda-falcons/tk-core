@@ -567,6 +567,8 @@ class LoginDialog(QtGui.QDialog):
             # We need a two factor authentication code, move to the next page.
             self.ui.stackedWidget.setCurrentWidget(self.ui._2fa_page)
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             self._set_error_message(self.ui.message, e)
 
     def _authenticate(self, error_label, site, login, password, auth_code=None):
@@ -614,6 +616,8 @@ class LoginDialog(QtGui.QDialog):
                 )
         except AuthenticationError as e:
             # authentication did not succeed
+            import traceback
+            traceback.print_exc()
             self._set_error_message(error_label, e)
         else:
             success = True
@@ -657,6 +661,8 @@ class LoginDialog(QtGui.QDialog):
         try:
             self._authenticate(error_label, site, login, password, code)
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             self._set_error_message(self.ui.message, e)
 
     def _use_backup_pressed(self):
