@@ -67,7 +67,7 @@ def process(
     progress_info_callback("Contacting ShotGrid to create a authentication request")
     try:
         response = http_request(url_opener, request)
-        if response.code != http.client.OK:
+        if response.code != http.client.CREATED:
             raise errors.AuthenticationError("Request denied", response.json)
 
         session_id = response.json['sessionRequestId']
@@ -89,20 +89,19 @@ def process(
         logger.debug("awaiting browser login...")
 
         sleep_time = 2
-        request_timeout = 180 # 5 minutes
         request = urllib.request.Request(
             f"{sg_url}/internal_api/app_session_request/{session_id}",
-            method="PUT",
+            method="GET",
         )
         t0 = time.time()
-        while time.time() - t0 < request_timeout:
+        while response.json["status"] == "pending":
             response = http_request(url_opener, request)
             if response.code == http.client.NOT_FOUND:
                 raise errors.AuthenticationError(
                     "Request has maybe expired or proto error", response.json,
                 )
 
-            if "approved" not in response.json or not response.json["approved"]:
+            if response.json["status"] == "pending":
                 progress_info_callback(
                     "Session request is still pending",
                     started_waiting=t0,
@@ -123,10 +122,17 @@ def process(
         except urllib.error.URLError:
             pass
 
-    if "approved" not in response.json:
-        raise errors.AuthenticationError("Never approved")
-    elif not response.json['approved']:
+    if response.json["status"] == "approved":
+        pass
+        # handle bellow
+    elif response.json["status"] == "denied":
         raise errors.AuthenticationError("Rejected")
+    elif response.json["status"] == "expired":
+        raise errors.AuthenticationError("Never approved")
+    elif response.json["status"] == "unknown":
+        raise errors.AuthenticationError("Request has maybe expired or proto error")
+    else:
+        raise errors.AuthenticationError("Unknown error")
 
     if 'userLogin' not in response.json: # DEBUG ONLY
         response.json['userLogin'] = "julien.langlois"
@@ -164,14 +170,6 @@ def http_request(opener, req):
         response = exc.fp
     except urllib.error.URLError as exc:
         raise errors.AuthenticationError(exc.reason, exc)
-
-    if response.code == http.client.FORBIDDEN:
-        logger.error("response: {resp}".format(resp=response.read()))
-        raise errors.AuthenticationError("Proto error - invalid response data - not JSON")
-
-    if response.code == http.client.NOT_FOUND:
-        logger.error("response: {resp}".format(resp=response.read()))
-        raise errors.AuthenticationError("Authentication denied")
 
     try:
         data = json.load(response)
