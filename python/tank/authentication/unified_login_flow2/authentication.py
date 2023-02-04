@@ -71,7 +71,7 @@ def process(
 
     try:
         response = http_request(url_opener, request)
-        if response.code != http_client.OK:
+        if response.code != http_client.CREATED:
             raise errors.AuthenticationError("Request denied", response.json)
 
         session_id = response.json["sessionRequestId"]
@@ -107,14 +107,14 @@ def process(
                     session_id=session_id,
                 ),
             ),
-            # method="PUT",
+            # method="GET",
         )
 
         # Hook for Python 2
-        request.get_method = lambda: "PUT"
+        request.get_method = lambda: "GET"
 
         t0 = time.time()
-        while keep_waiting_callback() and time.time() - t0 < request_timeout:
+        while keep_waiting_callback() and response.json["status"] == "pending":
             response = http_request(url_opener, request)
             if response.code == http_client.NOT_FOUND:
                 raise errors.AuthenticationError(
@@ -122,7 +122,7 @@ def process(
                     response.json,
                 )
 
-            if "approved" not in response.json or not response.json["approved"]:
+            if response.json["status"] == "pending":
                 time.sleep(sleep_time)
                 continue
 
@@ -147,10 +147,17 @@ def process(
         except urllib.error.URLError:
             pass
 
-    if "approved" not in response.json:
-        raise errors.AuthenticationError("Never approved")
-    elif not response.json["approved"]:
+    if response.json["status"] == "approved":
+        pass
+        # handle bellow
+    elif response.json["status"] == "denied":
         raise errors.AuthenticationError("Rejected")
+    elif response.json["status"] == "expired":
+        raise errors.AuthenticationError("Never approved")
+    elif response.json["status"] == "unknown":
+        raise errors.AuthenticationError("Request has maybe expired or proto error")
+    else:
+        raise errors.AuthenticationError("Unknown error")
 
     if 'userLogin' not in response.json: # DEBUG ONLY
         response.json['userLogin'] = "julien.langlois"
