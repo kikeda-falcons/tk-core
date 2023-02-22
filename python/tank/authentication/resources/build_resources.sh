@@ -17,8 +17,8 @@ if [ -z "${PYTHON_BASE}" ]; then
     PYTHON_BASE="/Applications/Shotgun.app/Contents/Resources/Python"
 fi
 
-# Remove any problematic profiles from pngs.
-for f in *.png; do mogrify $f; done
+# Remove any problematic profiles from pngs.#
+###for f in *.png; do mogrify $f; done
 
 # Helper functions to build UI files
 function build_qt {
@@ -50,4 +50,4 @@ build_ui login_dialog
 
 # build resources
 echo "building resources..."
-build_res resources
+#####build_res resources
