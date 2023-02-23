@@ -43,6 +43,14 @@ QPushButton
     padding-right: 15px;
 }
 
+QPushButton::menu-indicator {
+    subcontrol-position: right center;
+}
+
+QPushButton QMenu::item {
+    padding: 15px;
+}
+
 QLineEdit, QComboBox
 {
     background-color: rgb(29, 31, 34);
@@ -231,7 +239,7 @@ QPushButton.main:pressed
           <item>
            <widget class="QLabel" name="message">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
@@ -267,7 +275,7 @@ QPushButton.main:pressed
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="button_layout" stretch="0,1,0,0">
+        <layout class="QHBoxLayout" name="button_layout" stretch="0,0,1,0,0">
          <property name="spacing">
           <number>10</number>
          </property>
@@ -296,6 +304,19 @@ QPushButton.main:pressed
             </widget>
            </item>
           </layout>
+         </item>
+         <item>
+          <widget class="QPushButton" name="button_options">
+           <property name="text">
+            <string>See other options</string>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
          <item>
           <spacer name="sign_in_hspacer">

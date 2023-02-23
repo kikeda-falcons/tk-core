@@ -34,6 +34,14 @@ class Ui_LoginDialog(object):
 "    padding-right: 15px;\n"
 "}\n"
 "\n"
+"QPushButton::menu-indicator {\n"
+"    subcontrol-position: right center;\n"
+"}\n"
+"\n"
+"QPushButton QMenu::item {\n"
+"    padding: 15px;\n"
+"}\n"
+"\n"
 "QLineEdit, QComboBox\n"
 "{\n"
 "    background-color: rgb(29, 31, 34);\n"
@@ -159,7 +167,7 @@ class Ui_LoginDialog(object):
         self.password.setObjectName("password")
         self.verticalLayout_7.addWidget(self.password)
         self.message = QtGui.QLabel(self.credentials)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.message.sizePolicy().hasHeightForWidth())
@@ -186,6 +194,11 @@ class Ui_LoginDialog(object):
         self.forgot_password_link.setObjectName("forgot_password_link")
         self.links.addWidget(self.forgot_password_link)
         self.button_layout.addLayout(self.links)
+        self.button_options = QtGui.QPushButton(self.login_page)
+        self.button_options.setAutoDefault(False)
+        self.button_options.setFlat(True)
+        self.button_options.setObjectName("button_options")
+        self.button_layout.addWidget(self.button_options)
         spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.button_layout.addItem(spacerItem1)
         self.cancel = QtGui.QPushButton(self.login_page)
@@ -199,7 +212,7 @@ class Ui_LoginDialog(object):
         self.sign_in.setFlat(True)
         self.sign_in.setObjectName("sign_in")
         self.button_layout.addWidget(self.sign_in)
-        self.button_layout.setStretch(1, 1)
+        self.button_layout.setStretch(2, 1)
         self.verticalLayout_3.addLayout(self.button_layout)
         self.stackedWidget.addWidget(self.login_page)
         self._2fa_page = QtGui.QWidget()
@@ -368,6 +381,7 @@ class Ui_LoginDialog(object):
         self.password.setPlaceholderText(QtGui.QApplication.translate("LoginDialog", "password", None, QtGui.QApplication.UnicodeUTF8))
         self.message.setText(QtGui.QApplication.translate("LoginDialog", "Please enter your credentials.", None, QtGui.QApplication.UnicodeUTF8))
         self.forgot_password_link.setText(QtGui.QApplication.translate("LoginDialog", "<html><head/><body><p><a href=\"http://mystudio.shotgrid.autodesk.com/user/forgot_password\"><span style=\" text-decoration: underline; color:#c0c1c3;\">Forgot your password?</span></a></p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
+        self.button_options.setText(QtGui.QApplication.translate("LoginDialog", "See other options", None, QtGui.QApplication.UnicodeUTF8))
         self.cancel.setText(QtGui.QApplication.translate("LoginDialog", "Cancel", None, QtGui.QApplication.UnicodeUTF8))
         self.sign_in.setText(QtGui.QApplication.translate("LoginDialog", "Sign In", None, QtGui.QApplication.UnicodeUTF8))
         self.sign_in.setProperty("class", QtGui.QApplication.translate("LoginDialog", "main", None, QtGui.QApplication.UnicodeUTF8))
