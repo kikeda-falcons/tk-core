@@ -11,6 +11,7 @@
 import http
 import json
 import os
+import platform
 import time
 import urllib
 
@@ -50,7 +51,7 @@ def process(
         method="POST",
         data=urllib.parse.urlencode({
             "appName": product,
-            "machineId": "Example machine ID", # TODO
+            "machineId": gen_machine_id(),
         }).encode()
     )
 
@@ -195,6 +196,28 @@ def _build_proxy_addr(http_proxy):
         auth_string = ""
 
     return f"http://{auth_string}{proxy_server}:{proxy_port}"
+
+
+def gen_machine_id():
+    u = platform.uname()
+    ## macOS
+    #   system='Darwin', node='MTLPQ47MPPWCV', release='22.3.0',
+    #   version='Darwin Kernel Version 22.3.0: Mon Jan 30 20:38:37 PST 2023;
+    #            root:xnu-8792.81.3~2/RELEASE_ARM64_T6000', machine='arm64'
+
+    ## Linux
+    #   system='Linux', node='erwin', release='5.15.0-67-generic',
+    #   version='#74-Ubuntu SMP Wed Feb 22 14:14:39 UTC 2023', machine='x86_64'
+
+    ## Windows
+    #   system='Windows', node='vagrantvm', release='10',
+    #   version='10.0.19044', machine='AMD64'
+
+    system = u.system
+    if system == "Darwin":
+        system = "macOS"
+
+    return f"{u.node} - {system} {u.release} ({u.version})"
 
 
 if __name__ == "__main__":
