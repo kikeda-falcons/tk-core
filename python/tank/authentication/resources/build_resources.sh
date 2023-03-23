@@ -47,6 +47,7 @@ function build_res {
 # build UI's:
 echo "building user interfaces..."
 build_ui login_dialog
+build_ui unified_login_flow2_dialog
 
 # build resources
 echo "building resources..."

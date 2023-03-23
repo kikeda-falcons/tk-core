@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>UnifiedLoginFlow2Dialog</class>
+ <widget class="QDialog" name="UnifiedLoginFlow2Dialog">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>364</width>
+    <height>304</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>364</width>
+    <height>296</height>
+   </size>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+QWidget
+{
+    background-color:  rgb(36, 39, 42);
+    color: rgb(192, 192, 192);
+    selection-background-color: rgb(168, 123, 43);
+    selection-color: rgb(230, 230, 230);
+    font-size: 11px;
+}
+
+QPushButton
+{
+    background-color: transparent;
+    border-radius: 2px;
+    padding: 8px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+QLineEdit, QComboBox
+{
+    background-color: rgb(29, 31, 34);
+    border: 1px solid rgb(54, 60, 66);
+    border-radius: 2px;
+    padding: 5px;
+     font-size: 12px;
+}
+
+QComboBox
+{
+    margin-left: 3;
+    margin-right: 3
+}
+
+QComboBox:focus, QLineEdit:focus
+{
+    border: 1px solid rgb(48, 167, 227);
+}
+
+QComboBox:drop-down:button {
+    border: 1px solid rgb(54, 60, 66);
+}
+
+QComboBox:down-arrow {
+    image: url(:/shotgun_authentication/down-arrow.png);
+
+}
+
+QLineEdit:Disabled {
+    background-color: rgb(60, 60, 60);
+    color: rgb(160, 160, 160);
+}
+
+QComboBox::drop-down:disabled {
+    border-width: 0px;
+
+}
+
+QComboBox::down-arrow:disabled {
+    image: url(noimg); border-width: 0px;
+}
+
+QComboBox::disabled {
+    background-color: rgb(60, 60, 60);
+    color: rgb(160, 160, 160);
+}</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0">
+   <property name="margin">
+    <number>20</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="label_spinner">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignHCenter|Qt::AlignTop</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="message">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QPushButton" name="cancel">
+     <property name="text">
+      <string>Cancel</string>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
