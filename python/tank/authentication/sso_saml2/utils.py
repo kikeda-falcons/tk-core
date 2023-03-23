@@ -126,6 +126,7 @@ def is_unified_login_flow2_enabled_on_site(url, http_proxy=None):
 
     :returns:   A boolean indicating if the unified login flow 2 is enabled or not.
     """
+    return is_unified_login_flow_enabled_on_site(url, http_proxy=http_proxy)
     infos = _get_site_infos(url, http_proxy)
     if "unified_login_flow_enabled2" in infos:
         get_logger().debug("unified_login_flow_enabled for {u}: {v}".format(
