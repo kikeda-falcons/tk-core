@@ -130,6 +130,9 @@ def process(
     elif not response.json['approved']:
         raise errors.AuthenticationError("Rejected")
 
+    if 'userLogin' not in response.json: # DEBUG ONLY
+        response.json['userLogin'] = "julien.langlois"
+
     logger.debug('Request approved')
     try:
         assert(response.json['sessionToken'])
