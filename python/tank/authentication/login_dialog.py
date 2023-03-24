@@ -30,6 +30,7 @@ from ..util import login
 from ..util import LocalFileStorageManager
 from .errors import AuthenticationError
 from .ui.qt_abstraction import QtGui, QtCore, QtNetwork, QtWebKit, QtWebEngineWidgets
+from .unified_login_flow2 import dialog as ulf2_ui
 from .sso_saml2 import (
     SsoSaml2IncompletePySide2,
     SsoSaml2Toolkit,
@@ -297,6 +298,8 @@ class LoginDialog(QtGui.QDialog):
                 "Timed out awaiting check for SSO support on the site: %s"
                 % self._get_current_site()
             )
+
+        self.ulf2_dialog = None
 
         # Initialize Options menu
         menu = self.ui.button_options.menu()
@@ -578,6 +581,9 @@ class LoginDialog(QtGui.QDialog):
         res = self.exec_()
 
         if res == QtGui.QDialog.Accepted:
+            if self._use_local_browser and self.ulf2_dialog:
+                return self.ulf2_dialog.session_info
+
             if self._session_metadata and self._sso_saml2:
                 return self._sso_saml2.get_session_data()
             return (
@@ -668,7 +674,18 @@ class LoginDialog(QtGui.QDialog):
         success = False
         try:
             if self._use_local_browser:
-                raise AuthenticationError("Not yet implemented!")
+                self.ui.message.setText("Process web authentication...")
+                self.ulf2_dialog = ulf2_ui.Dialog(
+                    site,
+                    sg_login=login,
+                    product=PRODUCT_IDENTIFIER,
+                    http_proxy=self._http_proxy,
+                    # TODO: session -renewal ???
+                )
+                res = self.ulf2_dialog.exec_()
+                if res != QtGui.QDialog.Accepted:
+                    error_msg = "error here!!!" # TODO retrieve the error from ULF2
+                    raise AuthenticationError(error_msg)
             elif self._use_web and self._sso_saml2:
                 profile_location = LocalFileStorageManager.get_site_root(
                     site, LocalFileStorageManager.CACHE
