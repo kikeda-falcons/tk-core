@@ -28,7 +28,8 @@ logger = LogManager.get_logger(__name__)
 def process(
     sg_url, login=None, renewal=False, http_proxy=None,
     product=None,
-    browser_open_callback=None
+    browser_open_callback=None,
+    progress_info_callback=None,
 ):
     sg_url = connection.sanitize_url(sg_url)
 
@@ -39,6 +40,11 @@ def process(
             product = "toolkit"
 
     assert callable(browser_open_callback)
+
+    if not progress_info_callback:
+        progress_info_callback = lambda message, **kwargs: None
+
+    assert callable(progress_info_callback)
 
     url_handlers = [urllib.request.HTTPHandler]
     if http_proxy:
@@ -60,6 +66,7 @@ def process(
         }).encode()
     )
 
+    progress_info_callback("Contacting ShotGrid to create a authentication request")
     try:
         response = http_request(url_opener, request)
         if response.code != http.client.OK:
@@ -74,6 +81,7 @@ def process(
 
     logger.debug(f"session ID: {session_id}")
     try:
+        progress_info_callback("Launching the web browser")
         ret = browser_open_callback(
             f"{sg_url}/app_session_request/{session_id}",
         )
@@ -97,6 +105,12 @@ def process(
                 )
 
             if "approved" not in response.json or not response.json["approved"]:
+                progress_info_callback(
+                    "Session request is still pending",
+                    started_waiting=t0,
+                    api_response=response,
+                )
+
                 time.sleep(sleep_time)
                 continue
 
@@ -233,11 +247,17 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("sg_url", help="Provide a ShotGrid URL")
+    parser.add_argument("--verbose", "-v", action="store_true", default=False)
     args = parser.parse_args()
+
+    info_callback = None
+    if args.verbose:
+        info_callback = lambda message, **kwargs: print(message, kwargs)
 
     result = process(
         args.sg_url, login="john",
-        browser_open_callback = lambda u: webbrowser.open(u)
+        browser_open_callback = lambda u: webbrowser.open(u),
+        progress_info_callback=info_callback,
     )
     if not result:
         print("The web authentication failed. Please try again.")
