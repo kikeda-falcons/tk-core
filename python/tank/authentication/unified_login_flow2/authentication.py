@@ -26,19 +26,17 @@ logger = LogManager.get_logger(__name__)
 
 
 def process(
-    sg_url, login=None, renewal=False, http_proxy=None,
+    sg_url, http_proxy=None,
     product=None,
     browser_open_callback=None,
     progress_info_callback=None,
 ):
     sg_url = connection.sanitize_url(sg_url)
 
-    if not product:
-        if "TK_AUTH_PRODUCT" in os.environ:
-            product = os.environ["TK_AUTH_PRODUCT"]
-        else:
-            product = "toolkit"
+    if not product and "TK_AUTH_PRODUCT" in os.environ:
+        product = os.environ["TK_AUTH_PRODUCT"]
 
+    assert product
     assert callable(browser_open_callback)
 
     if not progress_info_callback:

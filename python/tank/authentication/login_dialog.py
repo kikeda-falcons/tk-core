@@ -21,6 +21,7 @@ import os
 import sys
 from tank_vendor import shotgun_api3
 from tank_vendor import six
+from .. import constants
 from .web_login_support import get_shotgun_authenticator_support_web_login
 from .ui import resources_rc  # noqa
 from .ui import login_dialog
@@ -40,6 +41,7 @@ from .sso_saml2 import (
     is_unified_login_flow_enabled_on_site,
     is_unified_login_flow2_enabled_on_site,
 )
+from .unified_login_flow2 import authentication as ulf2_authentication
 from .. import LogManager
 
 logger = LogManager.get_logger(__name__)
@@ -280,6 +282,13 @@ class LoginDialog(QtGui.QDialog):
         self.ui._2fa_code.editingFinished.connect(self._strip_whitespaces)
         self.ui.backup_code.editingFinished.connect(self._strip_whitespaces)
 
+        self.ui.ulf2_msg_help.setOpenExternalLinks(True)
+        self.ui.ulf2_msg_help.setText(self.ui.ulf2_msg_help.text().format(
+            url=constants.SUPPORT_URL,
+        ))
+
+        self.ui.ulf2_msg_back.linkActivated.connect(self._ulf2_back_pressed)
+
         # While the user is typing, check the SSOness of the site so we can
         # show or hide the login and password fields.
         self.ui.site.lineEdit().textEdited.connect(self._site_url_changing)
@@ -299,7 +308,7 @@ class LoginDialog(QtGui.QDialog):
                 % self._get_current_site()
             )
 
-        self.ulf2_dialog = None
+        self._ulf2_task = None
 
         # Initialize Options menu
         menu = self.ui.button_options.menu()
@@ -581,8 +590,8 @@ class LoginDialog(QtGui.QDialog):
         res = self.exec_()
 
         if res == QtGui.QDialog.Accepted:
-            if self._use_local_browser and self.ulf2_dialog:
-                return self.ulf2_dialog.session_info
+            if self._use_local_browser and self._ulf2_task:
+                return self._ulf2_task.session_info
 
             if self._session_metadata and self._sso_saml2:
                 return self._sso_saml2.get_session_data()
@@ -674,18 +683,15 @@ class LoginDialog(QtGui.QDialog):
         success = False
         try:
             if self._use_local_browser:
-                self.ui.message.setText("Process web authentication...")
-                self.ulf2_dialog = ulf2_ui.Dialog(
-                    site,
-                    sg_login=login,
-                    product=PRODUCT_IDENTIFIER,
+                self.ui.stackedWidget.setCurrentWidget(self.ui.ulf2_page)
+                self._ulf2_task = ULF2_AuthTask(
+                    self, site,
                     http_proxy=self._http_proxy,
-                    # TODO: session -renewal ???
+                    product=PRODUCT_IDENTIFIER,
                 )
-                res = self.ulf2_dialog.exec_()
-                if res != QtGui.QDialog.Accepted:
-                    error_msg = "error here!!!" # TODO retrieve the error from ULF2
-                    raise AuthenticationError(error_msg)
+                self._ulf2_task.finished.connect(self._ulf2_task_finished)
+                self._ulf2_task.start()
+                return
             elif self._use_web and self._sso_saml2:
                 profile_location = LocalFileStorageManager.get_site_root(
                     site, LocalFileStorageManager.CACHE
@@ -776,3 +782,72 @@ class LoginDialog(QtGui.QDialog):
         Switches to the main two factor authentication page.
         """
         self.ui.stackedWidget.setCurrentWidget(self.ui._2fa_page)
+
+
+    def _ulf2_back_pressed(self):
+        """
+        Cancel Unified Login Flow 2 authentication and switch page back to login
+        """
+        # TODO
+        
+        if self._ulf2_task and self._ulf2_task.isRunning():
+            print("Kill task")
+            self._ulf2_task.terminate()
+
+        self.ui.stackedWidget.setCurrentWidget(self.ui.login_page)
+
+    def _ulf2_task_finished(self):
+        if not self._ulf2_task:
+            return
+
+        if self._ulf2_task.exception:
+            self._set_error_message(self.ui.message, self._ulf2_task.exception)
+            self.ui.stackedWidget.setCurrentWidget(self.ui.login_page)
+            self._ulf2_task = None
+            return
+
+        if not self._ulf2_task.session_info:
+            # The task got interrupted somehow.
+            return
+
+        self.accept()
+
+
+import time # TODO - remove callback ...
+
+class ULF2_AuthTask(QtCore.QThread):
+    progressing = QtCore.Signal(str)
+
+    def __init__(self, parent, sg_url, http_proxy=None, product=None):
+        super().__init__(parent)
+        self.setTerminationEnabled(True)
+
+        self._sg_url = sg_url
+        self._http_proxy = http_proxy
+        self._product = product
+
+        # Result object
+        self.session_info = None
+        self.exception = None
+
+
+    def run(self):
+        try:
+            self.session_info = ulf2_authentication.process(
+                self._sg_url,
+                #login=self._dialog._sg_login,
+                http_proxy=self._http_proxy,
+                product=self._product,
+                browser_open_callback = lambda u: QtGui.QDesktopServices.openUrl(u),
+                progress_info_callback=self.on_progress_info,
+            )
+        except AuthenticationError as err:
+            self.exception = err
+
+
+    def on_progress_info(self, message, **kwargs):
+        # TODO: replace message by status ...??
+
+        if "started_waiting" in kwargs:
+            delta = time.time() - kwargs["started_waiting"]
+            self.progressing.emit(f"Waited {delta:.0f} seconds; waiting another one...")
