@@ -10,9 +10,11 @@
 
 # https://houndci.com configuration file for linting and PEP8
 
+fail_on_violations: true
+
 python:
   enabled: true
   config_file: .flake8
 
-rubocop:
-  enabled: false
+shellcheck:
+  enabled: true
