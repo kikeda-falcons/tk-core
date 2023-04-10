@@ -17,7 +17,7 @@ class Ui_LoginDialog(object):
         LoginDialog.setStyleSheet("\n"
 "QWidget\n"
 "{\n"
-"    background-color:  rgb(36, 39, 42);\n"
+"    background-color: rgb(36, 39, 42);\n"
 "    color: rgb(192, 192, 192);\n"
 "    selection-background-color: rgb(168, 123, 43);\n"
 "    selection-color: rgb(230, 230, 230);\n"
@@ -39,13 +39,13 @@ class Ui_LoginDialog(object):
 "    border: 1px solid rgb(54, 60, 66);\n"
 "    border-radius: 2px;\n"
 "    padding: 5px;\n"
-"     font-size: 12px;\n"
+"    font-size: 12px;\n"
 "}\n"
 "\n"
 "QComboBox\n"
 "{\n"
-"    margin-left: 3;\n"
-"    margin-right: 3\n"
+"    margin-left: 3px;\n"
+"    margin-right: 3px;\n"
 "}\n"
 "\n"
 "QComboBox:focus, QLineEdit:focus\n"
@@ -69,7 +69,6 @@ class Ui_LoginDialog(object):
 "\n"
 "QComboBox::drop-down:disabled {\n"
 "    border-width: 0px;\n"
-"\n"
 "}\n"
 "\n"
 "QComboBox::down-arrow:disabled {\n"
@@ -79,7 +78,7 @@ class Ui_LoginDialog(object):
 "QComboBox::disabled {\n"
 "    background-color: rgb(60, 60, 60);\n"
 "    color: rgb(160, 160, 160);\n"
-"}")
+"}\n")
         LoginDialog.setModal(True)
         self.verticalLayout_2 = QtGui.QVBoxLayout(LoginDialog)
         self.verticalLayout_2.setContentsMargins(20, 20, 20, 20)
