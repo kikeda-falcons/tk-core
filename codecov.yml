@@ -1,4 +1,11 @@
 
+coverage:
+  status:
+    project:
+      default:
+        # basic settings
+        only_pulls: true
+
 ignore:
   # ignore generated QT files
   - "**tank/authentication/ui/login_dialog.py"
