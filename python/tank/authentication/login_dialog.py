@@ -21,6 +21,7 @@ import os
 import sys
 from tank_vendor import shotgun_api3
 from tank_vendor import six
+from .. import constants
 from .web_login_support import get_shotgun_authenticator_support_web_login
 from .ui import resources_rc  # noqa
 from .ui import login_dialog
@@ -31,6 +32,7 @@ from ..util import login
 from ..util import LocalFileStorageManager
 from .errors import AuthenticationError
 from .ui.qt_abstraction import QtGui, QtCore, QtNetwork, QtWebKit, QtWebEngineWidgets
+from .unified_login_flow2 import authentication as ulf2_authentication
 from .sso_saml2 import (
     SsoSaml2IncompletePySide2,
     SsoSaml2Toolkit,
@@ -193,6 +195,8 @@ class LoginDialog(QtGui.QDialog):
         self._use_web = False
         self._use_local_browser = False
 
+        self._ulf2_task = None
+
         # setup the gui
         self.ui = login_dialog.Ui_LoginDialog()
         self.ui.setupUi(self)
@@ -263,6 +267,28 @@ class LoginDialog(QtGui.QDialog):
         # Select the right first page.
         self.ui.stackedWidget.setCurrentWidget(self.ui.login_page)
 
+        # Initialize Options menu
+        self.ui.button_options.setVisible(False)
+        menu = self.ui.button_options.menu()
+        if not menu:
+            menu = QtGui.QMenu(self.ui.button_options)
+            self.ui.button_options.setMenu(menu)
+        menu.clear()
+
+        self.menu_action_ulf2 = QtGui.QAction("Authenticate with your web browser", menu)
+        self.menu_action_ulf2.triggered.connect(self._menu_activated_action_ulf2)
+        menu.addAction(self.menu_action_ulf2)
+
+        self.menu_action_ulf = QtGui.QAction("Authenticate on the web (legacy)", menu)
+        self.menu_action_ulf.triggered.connect(self._menu_activated_action_web_legacy)
+        menu.addAction(self.menu_action_ulf)
+
+        self.menu_action_legacy = QtGui.QAction("Authenticate with login credentials", menu)
+        self.menu_action_legacy.triggered.connect(self._menu_activated_action_login_creds)
+        menu.addAction(self.menu_action_legacy)
+
+        menu.addAction("Forgot your password?", self._link_activated)
+
         # hook up signals
         self.ui.sign_in.clicked.connect(self._ok_pressed)
         self.ui.stackedWidget.currentChanged.connect(self._current_page_changed)
@@ -284,6 +310,13 @@ class LoginDialog(QtGui.QDialog):
         self.ui._2fa_code.editingFinished.connect(self._strip_whitespaces)
         self.ui.backup_code.editingFinished.connect(self._strip_whitespaces)
 
+        self.ui.ulf2_msg_help.setOpenExternalLinks(True)
+        self.ui.ulf2_msg_help.setText(self.ui.ulf2_msg_help.text().format(
+            url=constants.SUPPORT_URL,
+        ))
+
+        self.ui.ulf2_msg_back.linkActivated.connect(self._ulf2_back_pressed)
+
         # While the user is typing, check the SSOness of the site so we can
         # show or hide the login and password fields.
         self.ui.site.lineEdit().textEdited.connect(self._site_url_changing)
@@ -302,27 +335,6 @@ class LoginDialog(QtGui.QDialog):
                 "Timed out awaiting check for SSO support on the site: %s"
                 % self._get_current_site()
             )
-
-        # Initialize Options menu
-        menu = self.ui.button_options.menu()
-        if not menu:
-            menu = QtGui.QMenu(self.ui.button_options)
-            self.ui.button_options.setMenu(menu)
-        menu.clear()
-
-        self.menu_action_ulf2 = QtGui.QAction("Authenticate with your web browser", menu)
-        self.menu_action_ulf2.triggered.connect(self._menu_activated_action_ulf2)
-        menu.addAction(self.menu_action_ulf2)
-
-        self.menu_action_ulf = QtGui.QAction("Authenticate on the web (legacy)", menu)
-        self.menu_action_ulf.triggered.connect(self._menu_activated_action_web_legacy)
-        menu.addAction(self.menu_action_ulf)
-
-        self.menu_action_legacy = QtGui.QAction("Authenticate with login credentials", menu)
-        self.menu_action_legacy.triggered.connect(self._menu_activated_action_login_creds)
-        menu.addAction(self.menu_action_legacy)
-
-        menu.addAction("Forgot your password?", self._link_activated)
 
     def __del__(self):
         """
@@ -619,6 +631,9 @@ class LoginDialog(QtGui.QDialog):
         res = self.exec_()
 
         if res == QtGui.QDialog.Accepted:
+            if self._use_local_browser and self._ulf2_task:
+                return self._ulf2_task.session_info
+
             if self._session_metadata and self._sso_saml2:
                 return self._sso_saml2.get_session_data()
             return (
@@ -709,7 +724,7 @@ class LoginDialog(QtGui.QDialog):
         success = False
         try:
             if self._use_local_browser:
-                raise AuthenticationError("Not yet implemented!")
+                return self._ulf2_process(site)
             elif self._use_web and self._sso_saml2:
                 profile_location = LocalFileStorageManager.get_site_root(
                     site, LocalFileStorageManager.CACHE
@@ -800,3 +815,79 @@ class LoginDialog(QtGui.QDialog):
         Switches to the main two factor authentication page.
         """
         self.ui.stackedWidget.setCurrentWidget(self.ui._2fa_page)
+
+    def _ulf2_process(self, site):
+        self._ulf2_task = ULF2_AuthTask(
+            self, site,
+            http_proxy=self._http_proxy,
+            product=PRODUCT_IDENTIFIER,
+        )
+        self._ulf2_task.finished.connect(self._ulf2_task_finished)
+        self._ulf2_task.start()
+
+        self.ui.stackedWidget.setCurrentWidget(self.ui.ulf2_page)
+
+    def _ulf2_back_pressed(self):
+        """
+        Cancel Unified Login Flow 2 authentication and switch page back to login
+        """
+
+        self.ui.stackedWidget.setCurrentWidget(self.ui.login_page)
+        logger.info("Cancelling web authentication")
+
+        if self._ulf2_task:
+            self._ulf2_task.finished.disconnect(self._ulf2_task_finished)
+            self._ulf2_task.stop_when_possible()
+            self._ulf2_task = None
+
+    def _ulf2_task_finished(self):
+        if not self._ulf2_task:
+            # Multi-Thread failsafe
+            return
+
+        self.ui.stackedWidget.setCurrentWidget(self.ui.login_page)
+
+        if self._ulf2_task.exception:
+            self._set_error_message(self.ui.message, self._ulf2_task.exception)
+            self._ulf2_task = None
+            return
+
+        if not self._ulf2_task.session_info:
+            # The task got interrupted somehow.
+            return
+
+        self.accept()
+
+
+class ULF2_AuthTask(QtCore.QThread):
+    progressing = QtCore.Signal(str)
+
+    def __init__(self, parent, sg_url, http_proxy=None, product=None):
+        super().__init__(parent)
+        self.should_stop = False
+
+        self._sg_url = sg_url
+        self._http_proxy = http_proxy
+        self._product = product
+
+        # Result object
+        self.session_info = None
+        self.exception = None
+
+    def run(self):
+        try:
+            self.session_info = ulf2_authentication.process(
+                self._sg_url,
+                http_proxy=self._http_proxy,
+                product=self._product,
+                browser_open_callback = lambda u: QtGui.QDesktopServices.openUrl(u),
+                keep_waiting_callback=self.should_continue,
+            )
+        except AuthenticationError as err:
+            self.exception = err
+
+    def should_continue(self):
+        return not self.should_stop
+
+    def stop_when_possible(self):
+        self.should_stop = True
