@@ -32,6 +32,9 @@ class Ui_LoginDialog(object):
 "    padding-left: 15px;\n"
 "    padding-right: 15px;\n"
 "}\n"
+"QPushButton:hover {\n"
+"    border: 1px solid rgb(54, 60, 66);\n"
+"}\n"
 "\n"
 "QLineEdit, QComboBox\n"
 "{\n"
@@ -169,6 +172,7 @@ class Ui_LoginDialog(object):
         self.button_layout.addWidget(self.cancel)
         self.sign_in = QtGui.QPushButton(self.login_page)
         self.sign_in.setStyleSheet("color: rgb(248, 248, 248);\n"
+"border: 0px;\n"
 "background-color: rgb(35, 165, 225);")
         self.sign_in.setAutoDefault(True)
         self.sign_in.setDefault(True)
