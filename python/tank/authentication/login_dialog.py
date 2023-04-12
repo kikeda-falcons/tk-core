@@ -25,6 +25,7 @@ from .web_login_support import get_shotgun_authenticator_support_web_login
 from .ui import resources_rc  # noqa
 from .ui import login_dialog
 from . import session_cache
+from . import exit_confirmation_dialog
 from ..util.shotgun import connection
 from ..util import login
 from ..util import LocalFileStorageManager
@@ -184,6 +185,9 @@ class LoginDialog(QtGui.QDialog):
         self.ui = login_dialog.Ui_LoginDialog()
         self.ui.setupUi(self)
 
+        # Init exit confirmation dialog
+        self.confirm = exit_confirmation_dialog.ExitDialog()
+
         # Assign credentials
         self._http_proxy = http_proxy
 
@@ -251,6 +255,10 @@ class LoginDialog(QtGui.QDialog):
         self.ui.sign_in.clicked.connect(self._ok_pressed)
         self.ui.stackedWidget.currentChanged.connect(self._current_page_changed)
 
+        self.ui.cancel.clicked.connect(self.confirm_exit)
+        self.ui.cancel_backup.clicked.connect(self.confirm_exit)
+        self.ui.cancel_tfa.clicked.connect(self.confirm_exit)
+
         self.ui.verify_2fa.clicked.connect(self._verify_2fa_pressed)
         self.ui.use_backup.clicked.connect(self._use_backup_pressed)
 
@@ -289,6 +297,30 @@ class LoginDialog(QtGui.QDialog):
         """
         # We want to clean up any running qthread.
         self._query_task.wait()
+
+    def closeEvent(self, event):
+        res = self.confirm.exec_()
+        if res != QtGui.QDialog.Accepted:
+            event.ignore()
+            return
+
+        super().closeEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            res = self.confirm.exec_()
+            if res != QtGui.QDialog.Accepted:
+                event.ignore()
+                return
+
+        super().keyPressEvent(event)
+
+    def confirm_exit(self):
+        res = self.confirm.exec_()
+        if res != QtGui.QDialog.Accepted:
+            return
+
+        self.reject()
 
     def _get_current_site(self):
         """
