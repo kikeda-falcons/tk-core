@@ -820,7 +820,7 @@ QPushButton.main:pressed
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="button_layout" stretch="0,1,0,0">
+            <layout class="QHBoxLayout" name="button_layout" stretch="0,0,1,0,0">
              <property name="spacing">
               <number>10</number>
              </property>
@@ -854,20 +854,20 @@ QPushButton.main:pressed
                  </property>
                 </widget>
                </item>
-               <item>
-                <widget class="QPushButton" name="button_options">
-                 <property name="text">
-                  <string>See other options</string>
-                 </property>
-                 <property name="autoDefault">
-                  <bool>false</bool>
-                 </property>
-                 <property name="flat">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
               </layout>
+             </item>
+             <item>
+              <widget class="QPushButton" name="button_options">
+               <property name="text">
+                <string>See other options</string>
+               </property>
+               <property name="autoDefault">
+                <bool>false</bool>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
              </item>
              <item>
               <spacer name="sign_in_hspacer">
@@ -1355,7 +1355,7 @@ background-color: rgb(35, 165, 225);</string>
      <widget class="QWidget" name="method_page">
       <layout class="QVBoxLayout" name="verticalLayout82">
        <item>
-        <widget class="QLabel" name="label_5">
+        <widget class="QLabel" name="label_method_back">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -1368,13 +1368,14 @@ background-color: rgb(35, 165, 225);</string>
          <property name="font">
           <font>
            <pointsize>-1</pointsize>
+           <underline>false</underline>
           </font>
          </property>
          <property name="toolTip">
           <string>Return to the login window</string>
          </property>
          <property name="text">
-          <string>Go back</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;#&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#c0c1c3;&quot;&gt;Go back&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -1402,6 +1403,12 @@ background-color: rgb(35, 165, 225);</string>
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="font">
           <font>
            <pointsize>-1</pointsize>
@@ -1455,6 +1462,12 @@ border: 0px;
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_4">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="font">
           <font>
            <pointsize>-1</pointsize>
@@ -1511,6 +1524,12 @@ border: 0px;
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_5">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="font">
           <font>
            <pointsize>-1</pointsize>
@@ -1587,6 +1606,7 @@ border: 0px;
  </customwidgets>
  <resources>
   <include location="resources.qrc"/>
+  <include location="../../../../../../../.designer/backup/resources.qrc"/>
  </resources>
  <connections/>
 </ui>

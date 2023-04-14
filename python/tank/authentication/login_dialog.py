@@ -269,25 +269,6 @@ class LoginDialog(QtGui.QDialog):
 
         # Initialize Options menu
         self.ui.button_options.setVisible(False)
-        menu = self.ui.button_options.menu()
-        if not menu:
-            menu = QtGui.QMenu(self.ui.button_options)
-            self.ui.button_options.setMenu(menu)
-        menu.clear()
-
-        self.menu_action_ulf2 = QtGui.QAction("Authenticate with your web browser", menu)
-        self.menu_action_ulf2.triggered.connect(self._menu_activated_action_ulf2)
-        menu.addAction(self.menu_action_ulf2)
-
-        self.menu_action_ulf = QtGui.QAction("Authenticate on the web (legacy)", menu)
-        self.menu_action_ulf.triggered.connect(self._menu_activated_action_web_legacy)
-        menu.addAction(self.menu_action_ulf)
-
-        self.menu_action_legacy = QtGui.QAction("Authenticate with login credentials", menu)
-        self.menu_action_legacy.triggered.connect(self._menu_activated_action_login_creds)
-        menu.addAction(self.menu_action_legacy)
-
-        menu.addAction("Forgot your password?", self._link_activated)
 
         # hook up signals
         self.ui.sign_in.clicked.connect(self._ok_pressed)
@@ -323,6 +304,9 @@ class LoginDialog(QtGui.QDialog):
         # If a site has been selected, we need to update the login field.
         self.ui.site.activated.connect(self._on_site_changed)
         self.ui.site.lineEdit().editingFinished.connect(self._on_site_changed)
+
+        self.ui.label_method_back.linkActivated.connect(self._method_back_clicked)
+        self.ui.button_options.clicked.connect(self._main_option_clicked)
 
         self._query_task = QuerySiteAndUpdateUITask(self, http_proxy)
         self._query_task.finished.connect(self._toggle_web)
@@ -537,11 +521,10 @@ class LoginDialog(QtGui.QDialog):
             self.ui.password.setVisible(True)
             self.ui.message.setText("Please enter your credentials.")
 
-        self.ui.forgot_password_link.setVisible(not self._query_task.unified_login_flow2_enabled)
         self.ui.button_options.setVisible(self._query_task.unified_login_flow2_enabled)
-        self.menu_action_ulf2.setVisible(not self._use_local_browser)
-        self.menu_action_ulf.setVisible(self._use_local_browser and use_web)
-        self.menu_action_legacy.setVisible(self._use_local_browser and not use_web)
+
+        # TEMP WIP
+        self.ui.cancel.setVisible(False)
 
     def _menu_activated_action_ulf2(self):
         self._toggle_web(menu_action="unified_login_flow2")
@@ -857,6 +840,12 @@ class LoginDialog(QtGui.QDialog):
             return
 
         self.accept()
+
+    def _method_back_clicked(self):
+        self.ui.stacked_main.setCurrentWidget(self.ui.main_page)
+
+    def _main_option_clicked(self):
+        self.ui.stacked_main.setCurrentWidget(self.ui.method_page)
 
 
 class ULF2_AuthTask(QtCore.QThread):
