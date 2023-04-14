@@ -119,6 +119,16 @@ class Ui_LoginDialog(object):
 "{\n"
 "    border-color: rgb(248, 248, 248);\n"
 "}\n"
+"""
+QGroupBox  {
+    border-radius: 15px;
+    background-color: transparent;
+}
+
+QGroupBox::title  {
+   font-weight: bold;
+}
+"""
 "")
         LoginDialog.setModal(True)
         self.verticalLayout_2 = QtGui.QVBoxLayout(LoginDialog)

@@ -332,19 +332,19 @@ class LoginDialog(QtGui.QDialog):
         self._query_task.wait()
 
     def closeEvent(self, event):
-        res = self.confirm.exec_()
-        if res != QtGui.QDialog.Accepted:
-            event.ignore()
-            return
+        # res = self.confirm.exec_()
+        # if res != QtGui.QDialog.Accepted:
+        #     event.ignore()
+        #     return
 
         super().closeEvent(event)
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Escape:
-            res = self.confirm.exec_()
-            if res != QtGui.QDialog.Accepted:
-                event.ignore()
-                return
+        # if event.key() == QtCore.Qt.Key_Escape:
+        #     res = self.confirm.exec_()
+        #     if res != QtGui.QDialog.Accepted:
+        #         event.ignore()
+        #         return
 
         super().keyPressEvent(event)
 
@@ -444,6 +444,8 @@ class LoginDialog(QtGui.QDialog):
         """
         Sets up the dialog GUI according to the use of web login or not.
         """
+        self.ui.stacked_main.setCurrentWidget(self.ui.method_page)
+        return
         # We only update the GUI if there was a change between to mode we
         # are showing and what was detected on the potential target site.
         # With a SSO site, we have no choice but to use the web to login.
