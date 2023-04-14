@@ -305,8 +305,12 @@ class LoginDialog(QtGui.QDialog):
         self.ui.site.activated.connect(self._on_site_changed)
         self.ui.site.lineEdit().editingFinished.connect(self._on_site_changed)
 
-        self.ui.label_method_back.linkActivated.connect(self._method_back_clicked)
         self.ui.button_options.clicked.connect(self._main_option_clicked)
+        self.ui.method_back.linkActivated.connect(self._method_back_clicked)
+
+        self.ui.method_browser_button.clicked.connect(self._menu_activated_action_ulf2)
+        self.ui.method_login_button.clicked.connect(self._menu_activated_action_login_creds)
+        self.ui.method_web_button.clicked.connect(self._menu_activated_action_web_legacy)
 
         self._query_task = QuerySiteAndUpdateUITask(self, http_proxy)
         self._query_task.finished.connect(self._toggle_web)
@@ -523,17 +527,25 @@ class LoginDialog(QtGui.QDialog):
 
         self.ui.button_options.setVisible(self._query_task.unified_login_flow2_enabled)
 
+        self.ui.method_login_group.setVisible(not use_local_browser)
+        self.ui.method_web_group.setVisible(use_local_browser)
+
         # TEMP WIP
         self.ui.cancel.setVisible(False)
 
     def _menu_activated_action_ulf2(self):
+        self.ui.stacked_main.setCurrentWidget(self.ui.main_page)
         self._toggle_web(menu_action="unified_login_flow2")
+        return self._ok_pressed()
 
     def _menu_activated_action_web_legacy(self):
+        self.ui.stacked_main.setCurrentWidget(self.ui.main_page)
         self._toggle_web(menu_action="web_legacy")
+        return self._ok_pressed()
 
     def _menu_activated_action_login_creds(self):
-        self._toggle_web(menu_action="credentials")
+        self.ui.stacked_main.setCurrentWidget(self.ui.main_page)
+        return self._toggle_web(menu_action="credentials")
 
     def _current_page_changed(self, index):
         """
