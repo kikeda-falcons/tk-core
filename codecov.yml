@@ -1,0 +1,3 @@
+
+ignore:
+  - "*tank/authentication/ui"  # ignore generated QT files
