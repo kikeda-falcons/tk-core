@@ -1,3 +1,5 @@
 
 ignore:
-  - "*tank/authentication/ui"  # ignore generated QT files
+  # ignore generated QT files
+  - "**tank/authentication/ui/login_dialog.py"
+  - "**tank/authentication/ui/resources_rc.py"
