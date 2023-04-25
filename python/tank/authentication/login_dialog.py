@@ -121,6 +121,7 @@ class QuerySiteAndUpdateUITask(QtCore.QThread):
         """
         Runs the thread.
         """
+        print("QuerySiteAndUpdateUITask::run")
         # The site information is cached, so those three calls do not add
         # any significant overhead.
         self._sso_enabled = is_sso_enabled_on_site(self.url_to_test, self._http_proxy)
@@ -477,6 +478,7 @@ class LoginDialog(QtGui.QDialog):
             )
 
     def _toggle_web(self, menu_action=None):
+        print("_toggle_web")
         """
         Sets up the dialog GUI according to the use of web login or not.
         """
@@ -529,7 +531,7 @@ class LoginDialog(QtGui.QDialog):
             if self._use_local_browser:
                 return  # nothing to do
 
-            self._use_local_browser = not self._use_local_browser
+            self._use_local_browser = True
 
             self.ui.site.setFocus(QtCore.Qt.OtherFocusReason)
             self.ui.login.setVisible(False)

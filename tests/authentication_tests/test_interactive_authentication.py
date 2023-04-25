@@ -15,7 +15,7 @@ Unit tests for interactive authentication.
 from __future__ import with_statement, print_function
 
 import contextlib
-
+import os
 import sys
 
 from tank_test.tank_test_base import setUpModule  # noqa
@@ -55,13 +55,17 @@ class InteractiveTests(ShotgunTestBase):
         # value even if no QApplication has been constructed on PySide2.
         if not QtGui.QApplication.instance():
             self._app = QtGui.QApplication(sys.argv)
+        else:
+            self._app = QtGui.QApplication.instance()
+
         super(InteractiveTests, self).setUp()
 
     def tearDown(self):
-        super(InteractiveTests, self).tearDown()
         from tank.authentication.ui.qt_abstraction import QtGui
 
         QtGui.QApplication.processEvents()
+
+        super(InteractiveTests, self).tearDown()
 
     @suppress_generated_code_qt_warnings
     def test_site_and_user_disabled_on_session_renewal(self):
@@ -411,6 +415,7 @@ class InteractiveTests(ShotgunTestBase):
                     self.assertEqual(widget.currentText(), "text")
 
     @suppress_generated_code_qt_warnings
+    # @patch("tank.authentication.login_dialog.ULF2_AuthTask.start")
     def test_login_dialog_exit_confirmation(self):
         """
         Make sure that the site and user fields are disabled when doing session renewal
@@ -420,6 +425,9 @@ class InteractiveTests(ShotgunTestBase):
 
         # Test window close event
         with self._login_dialog(False) as ld:
+            # Switch page for better code coverage
+            # ld._ulf2_process("sg_url_example")
+
             # First, simulate user clicks on the No button
             ld.confirm_box.exec = lambda: QtGui.QMessageBox.StandardButton.No
 
@@ -441,6 +449,9 @@ class InteractiveTests(ShotgunTestBase):
                 QtCore.Qt.Key_Escape,
                 QtCore.Qt.KeyboardModifiers(),
             )
+
+            # Switch page for better code coverage
+           # ld._ulf2_process("sg_url_example")
 
             # First, simulate user clicks on the No button
             ld.confirm_box.exec = lambda: QtGui.QMessageBox.StandardButton.No
@@ -480,10 +491,26 @@ class InteractiveTests(ShotgunTestBase):
         ),
     )
     def test_login_dialog_unified_login_flow2(self, *unused_mocks):
+        print()
+        print()
         with self._login_dialog(
             True,
             hostname="https://host.shotgunstudio.com",
         ) as ld:
+            # Simulate server capabilities check and UI refresh
+            print("LD launched")
+            ld._query_task.wait()
+            print("waited ")
+            
+            print("_query_task.sso_enabled:", ld._query_task.sso_enabled)
+            print("_query_task.autodesk_identity_enabled:", ld._query_task.autodesk_identity_enabled)
+            print("_query_task.unified_login_flow_enabled:", ld._query_task.unified_login_flow_enabled)
+            print("_query_task.unified_login_flow2_enabled:", ld._query_task.unified_login_flow2_enabled)
+            
+            # ld._query_task.run() # for coverage - dfoes not detect if different thread???
+            # ld._toggle_web()
+
+            # Legacy creds and ULF2 methods are available
             self.assertTrue(ld.menu_action_legacy.isVisible())
             self.assertFalse(ld.menu_action_ulf.isVisible())
             self.assertTrue(ld.menu_action_ulf2.isVisible())
@@ -502,6 +529,9 @@ class InteractiveTests(ShotgunTestBase):
             # Trigger ULF2 again
             ld._menu_activated_action_ulf2()
 
+            # # Trigger ULF2 again
+            # ld._menu_activated_action_ulf2()
+
             # Trigger Sign-In
             ld._ok_pressed()
 
@@ -509,6 +539,24 @@ class InteractiveTests(ShotgunTestBase):
 
             # check that UI displays the UFL2 pending screen
             self.assertEqual(ld.ui.stackedWidget.currentWidget(), ld.ui.ulf2_page)
+
+            # Cancel the request and go back to the login screen
+            ld._ulf2_back_pressed()
+
+            # check that UI displays the login credentials
+            self.assertEqual(ld.ui.stackedWidget.currentWidget(), ld.ui.login_page)
+            self.assertIsNone(ld._ulf2_task)
+
+            # Trigger Sign-In
+            ld._ok_pressed()
+            self.assertIsNotNone(ld._ulf2_task, "ULF2 Auth has started")
+
+            # Simulate ULF2 Thread run
+            ld._ulf2_task.run()
+            ld._ulf2_task_finished()
+
+            # check that UI displays the login credentials
+            self.assertEqual(ld.ui.stackedWidget.currentWidget(), ld.ui.login_page)
 
             # Cancel the request and go back to the login screen
             ld._ulf2_back_pressed()
@@ -537,3 +585,47 @@ class InteractiveTests(ShotgunTestBase):
                     None,
                 ),
             )
+
+    @suppress_generated_code_qt_warnings
+    @patch("tank.authentication.login_dialog.ULF2_AuthTask.start")
+    @patch(
+        "tank.authentication.sso_saml2.utils._get_site_infos",
+        return_value={
+            "unified_login_flow_enabled": True,
+            "unified_login_flow_enabled2": True,
+            "user_authentication_method": "oxygen",
+        },
+    )
+    @patch(
+        "tank.authentication.login_dialog._is_running_in_desktop",
+        return_value=True,
+    )
+    def test_g11(self, *unused_mocks):
+        with self._login_dialog(
+            True,
+            hostname="https://host.shotgunstudio.com",
+        ) as ld:
+            # Validate available method
+            self.assertFalse(ld.menu_action_legacy.isVisible())
+            self.assertTrue(ld.menu_action_ulf.isVisible())
+            self.assertTrue(ld.menu_action_ulf2.isVisible())
+
+            # Current method is ULF2
+            self.assertFalse(ld._use_web)
+            self.assertTrue(ld._use_local_browser)
+
+            # Trigger legacy web login method
+            ld._menu_activated_action_web_legacy()
+
+            # Current method is now legacy web
+            self.assertTrue(ld._use_web)
+            self.assertFalse(ld._use_local_browser)
+
+            # Validate the legacy UX when env overrides
+            os.environ["SGTK_FORCE_STANDARD_LOGIN_DIALOG"] = "1"
+            try:
+                ld._toggle_web()
+                self.assertFalse(ld._use_web, "Legacy selected")
+                self.assertFalse(ld._use_local_browser, "Legacy selected")
+            finally:
+                del(os.environ["SGTK_FORCE_STANDARD_LOGIN_DIALOG"])
