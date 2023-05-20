@@ -387,8 +387,6 @@ class InteractiveTests(ShotgunTestBase):
     @patch(
         "tank.authentication.sso_saml2.utils._get_site_infos",
         return_value={
-            "user_authentication_method": "default",
-            "unified_login_flow_enabled": False,
             "unified_login_flow_enabled2": False,
         },
     )
@@ -540,7 +538,6 @@ class InteractiveTests(ShotgunTestBase):
         "tank.authentication.sso_saml2.utils._get_site_infos",
         return_value={
             "unified_login_flow_enabled2": True,
-            "user_authentication_method": "default",
         },
     )
     @patch("tank.authentication.login_dialog.ULF2_AuthTask.start")
@@ -619,8 +616,6 @@ class InteractiveTests(ShotgunTestBase):
     @patch(
         "tank.authentication.sso_saml2.utils._get_site_infos",
         return_value={
-            "user_authentication_method": "default",
-            "unified_login_flow_enabled": False,
             "unified_login_flow_enabled2": True,
         },
     )
@@ -677,8 +672,8 @@ class InteractiveTests(ShotgunTestBase):
 
         # Then repeat the operation having the site configured with Oxygen
         with patch(
-            "tank.authentication.console_authentication.is_autodesk_identity_enabled_on_site",
-            return_value=True,
+            "tank.authentication.sso_saml2.utils._get_user_authentication_method",
+            return_value="oxygen",
         ), patch(
             "tank.authentication.console_authentication.input",
             side_effect=[
@@ -687,10 +682,28 @@ class InteractiveTests(ShotgunTestBase):
             ],
         ), patch(
             "tank.authentication.unified_login_flow2.authentication.process",
+            return_value="ULF2 result 9867",
+        ):
+            self.assertEqual(
+                handler.authenticate("https://site4.shotgunstudio.com", None, None),
+                "ULF2 result 9867",
+            )
+
+        # Then, one more small test for coverage
+        with patch(
+            "tank.authentication.sso_saml2.utils._get_user_authentication_method",
+            return_value="oxygen",
+        ), patch(
+            "tank.authentication.console_authentication.input",
+            side_effect=[
+                "",  # OK to continue
+            ],
+        ), patch(
+            "tank.authentication.unified_login_flow2.authentication.process",
             return_value=None, # Simulate an authentication error
         ):
             with self.assertRaises(errors.AuthenticationError):
-                handler.authenticate("https://site4.shotgunstudio.com", None, None)
+                handler._authenticate_unified_login_flow2("https://site4.shotgunstudio.com", None, None)
 
         # Finally, disable ULF2 method and ensure legacy cred methods is
         # automatically selected
@@ -715,8 +728,6 @@ class InteractiveTests(ShotgunTestBase):
     @patch(
         "tank.authentication.sso_saml2.utils._get_site_infos",
         return_value={
-            "user_authentication_method": "default",
-            "unified_login_flow_enabled": False,
             "unified_login_flow_enabled2": True,
         },
     )
