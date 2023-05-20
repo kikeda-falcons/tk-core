@@ -30,6 +30,7 @@ from tank.authentication import (
     console_authentication,
     ConsoleLoginNotSupportedError,
     ConsoleLoginWithSSONotSupportedError,
+    errors,
     interactive_authentication,
     invoker,
     user_impl,
@@ -384,16 +385,19 @@ class InteractiveTests(ShotgunTestBase):
         )
 
     @patch(
-        "tank.authentication.console_authentication.is_sso_enabled_on_site",
-        return_value=False,
-    )
-    @patch(
-        "tank.authentication.console_authentication.is_unified_login_flow2_enabled_on_site",
-        return_value=False,
+        "tank.authentication.sso_saml2.utils._get_site_infos",
+        return_value={
+            "user_authentication_method": "default",
+            "unified_login_flow_enabled": False,
+            "unified_login_flow_enabled2": False,
+        },
     )
     @patch(
         "tank.authentication.console_authentication.ConsoleRenewSessionHandler._get_password",
-        return_value="password",
+        side_effect=[
+            "password",
+            EOFError(), # Simulate an error
+        ]
     )
     @patch(
         "tank.authentication.session_cache.generate_session_token",
@@ -405,6 +409,10 @@ class InteractiveTests(ShotgunTestBase):
             handler.authenticate("https://test.shotgunstudio.com", "username", None),
             ("https://test.shotgunstudio.com", "username", "my_session_token_97", None),
         )
+
+        # Then repeat the operation with an exception for password
+        with self.assertRaises(errors.AuthenticationCancelled):
+            handler.authenticate("https://test.shotgunstudio.com", "username", None)
 
     @patch(
         "tank.authentication.console_authentication.input",
@@ -609,16 +617,12 @@ class InteractiveTests(ShotgunTestBase):
             )
 
     @patch(
-        "tank.authentication.console_authentication.is_autodesk_identity_enabled_on_site",
-        return_value=False,
-    )
-    @patch(
-        "tank.authentication.console_authentication.is_sso_enabled_on_site",
-        return_value=False,
-    )
-    @patch(
-        "tank.authentication.console_authentication.is_unified_login_flow2_enabled_on_site",
-        return_value=True,
+        "tank.authentication.sso_saml2.utils._get_site_infos",
+        return_value={
+            "user_authentication_method": "default",
+            "unified_login_flow_enabled": False,
+            "unified_login_flow_enabled2": True,
+        },
     )
     @patch(
         "tank.authentication.session_cache.generate_session_token", return_value=None
@@ -683,12 +687,10 @@ class InteractiveTests(ShotgunTestBase):
             ],
         ), patch(
             "tank.authentication.unified_login_flow2.authentication.process",
-            return_value=("https://site1.shotgunstudio.com", "ULF2!", None, None),
+            return_value=None, # Simulate an authentication error
         ):
-            self.assertEqual(
-                handler.authenticate("https://site4.shotgunstudio.com", None, None),
-                ("https://site1.shotgunstudio.com", "ULF2!", None, None),
-            )
+            with self.assertRaises(errors.AuthenticationError):
+                handler.authenticate("https://site4.shotgunstudio.com", None, None)
 
         # Finally, disable ULF2 method and ensure legacy cred methods is
         # automatically selected
@@ -709,3 +711,40 @@ class InteractiveTests(ShotgunTestBase):
                 handler.authenticate("https://site3.shotgunstudio.com", None, None),
                 ("https://site3.shotgunstudio.com", "username", None, None),
             )
+
+    @patch(
+        "tank.authentication.sso_saml2.utils._get_site_infos",
+        return_value={
+            "user_authentication_method": "default",
+            "unified_login_flow_enabled": False,
+            "unified_login_flow_enabled2": True,
+        },
+    )
+    def test_console_get_auth_method(self, *unused_mocks):
+        handler = console_authentication.ConsoleLoginHandler(fixed_host=True)
+
+        with patch(
+            "tank.authentication.console_authentication.input",
+            return_value="1",
+        ):
+            self.assertEqual(
+                handler._get_auth_method("https://host.shotgunstudio.com", None),
+                handler._authenticate_unified_login_flow2
+            )
+
+        with patch(
+            "tank.authentication.console_authentication.input",
+            return_value="2",
+        ):
+            self.assertEqual(
+                handler._get_auth_method("https://host.shotgunstudio.com", None),
+                handler._authenticate_legacy
+            )
+
+        for wrong_value in ["0", "3", "-1", "42", "wrong"]:
+            with patch(
+                "tank.authentication.console_authentication.input",
+                return_value=wrong_value,
+            ):
+                with self.assertRaises(errors.AuthenticationError):
+                    handler._get_auth_method("https://host.shotgunstudio.com", None)
