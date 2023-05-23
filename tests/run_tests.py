@@ -178,7 +178,8 @@ def _finalize_coverage(cov):
     try:
         # seems to be some CI issues with html coverage so
         # failing gracefully with a warning in case it doesn't work.
-        cov.html_report(directory="coverage_html_report")
+        #cov.html_report(directory="coverage_html_report")
+        cov.lcov_report(outfile="../lcov.info")
     except Exception as e:
         print("WARNING: Html coverage report could not be written: %s" % e)
     else:
