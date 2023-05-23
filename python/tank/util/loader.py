@@ -54,8 +54,8 @@ def load_plugin(plugin_file, valid_base_class, alternate_base_classes=None):
 
     module_uid = uuid.uuid4().hex
     module = None
+    imp.acquire_lock()
     try:
-        imp.acquire_lock()
         module = imp.load_source(module_uid, plugin_file)
     except Exception:
         # log the full callstack to make sure that whatever the
