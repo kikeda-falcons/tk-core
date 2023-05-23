@@ -25,7 +25,7 @@ from tank_test.tank_test_base import (
     interactive,
     suppress_generated_code_qt_warnings,
 )
-from mock import patch
+from unittest.mock import patch
 from tank.authentication import (
     console_authentication,
     ConsoleLoginNotSupportedError,
