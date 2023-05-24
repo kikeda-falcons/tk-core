@@ -34,6 +34,7 @@ valid_sso_session_metadata = base64.b64encode(
     six.ensure_binary("csrf_token_u00=fedcba;shotgun_sso_session_expiration_u00=4321")
 )
 
+# Add useless comment to trigger new Azure tests :/
 
 class UserTests(ShotgunTestBase):
     def _create_test_user(self, login="login"):
