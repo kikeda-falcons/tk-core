@@ -33,7 +33,10 @@ from .sso_saml2 import (
     is_unified_login_flow2_enabled_on_site,
     is_autodesk_identity_enabled_on_site,
 )
+from .sso_saml2.utils import _get_user_authentication_method
 from .unified_login_flow2 import authentication as ulf2_authentication
+from ..util.metrics import EventMetric
+from ..util import metrics_cache
 from ..util.shotgun.connection import sanitize_url
 
 from getpass import getpass
@@ -94,12 +97,30 @@ class ConsoleAuthenticationHandlerBase(object):
 
             auth_fn = self._get_auth_method(hostname, http_proxy)
             try:
-                return auth_fn(hostname, login, http_proxy)
+                result = auth_fn(hostname, login, http_proxy)
             except AuthenticationError as error:
                 # If any combination of credentials are invalid (user + invalid pass or
                 # user + valid pass + invalid 2da code) we'll end up here.
                 print("Login failed: %s" % error)
                 print()
+            else:
+                metrics_cache.log(
+                    EventMetric.GROUP_TOOLKIT,
+                    "Logged In",
+                    properties={
+                        "authentication_method": _get_user_authentication_method(hostname, http_proxy),
+                        "Method": "unified_login_flow2" if auth_fn == self._authenticate_unified_login_flow2 else "credentials",
+                        "mode": "console",
+                        "Action": isinstance(self, ConsoleRenewSessionHandler),
+
+                        # TODO: replace the properties keys:
+                        #   Method => authentication_experience
+                        #   platform => authentication_interface
+                        #   Action => authentication_renewal
+                    },
+                )
+
+                return result
 
     def _authenticate_legacy(self, hostname, login, http_proxy):
         # Get the credentials from the user

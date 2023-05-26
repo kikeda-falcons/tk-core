@@ -26,9 +26,11 @@ from .web_login_support import get_shotgun_authenticator_support_web_login
 from .ui import resources_rc  # noqa
 from .ui import login_dialog
 from . import session_cache
+from ..util.metrics import EventMetric
 from ..util.shotgun import connection
 from ..util import login
 from ..util import LocalFileStorageManager
+from ..util import metrics_cache
 from .errors import AuthenticationError
 from .ui.qt_abstraction import QtGui, QtCore, QtNetwork, QtWebKit, QtWebEngineWidgets
 from .unified_login_flow2 import authentication as ulf2_authentication
@@ -685,6 +687,31 @@ class LoginDialog(QtGui.QDialog):
         res = self.exec_()
 
         if res == QtGui.QDialog.Accepted:
+            # Name auth UX method
+            if self._use_local_browser:
+                method = "unified_login_flow2"
+            elif self._use_web:
+                method = "web_legacy"
+            else:
+                method = "credentials"
+            # TODO rename that and use an ENUM + dict str
+
+            metrics_cache.log(
+                EventMetric.GROUP_TOOLKIT,
+                "Logged In",
+                properties={
+                    "authentication_method": self._query_task.method,
+                    "Method": method,
+                    "mode": "qt_dialog",
+                    "Action": True,
+
+                    # TODO: replace the properties keys:
+                    #   Method => authentication_experience
+                    #   platform => authentication_interface
+                    #   Action => authentication_renewal
+                },
+            )
+
             if self._use_local_browser and self._ulf2_task:
                 return self._ulf2_task.session_info
 
