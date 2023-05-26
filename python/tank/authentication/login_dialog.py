@@ -696,8 +696,6 @@ class LoginDialog(QtGui.QDialog):
                 self._new_session_token,
                 None,
             )
-        else:
-            return None
 
     def _set_error_message(self, widget, message):
         """
