@@ -41,6 +41,7 @@ from .sso_saml2 import (
     is_unified_login_flow_enabled_on_site,
     is_unified_login_flow2_enabled_on_site,
 )
+from .sso_saml2.utils import _get_user_authentication_method
 from .. import LogManager
 
 logger = LogManager.get_logger(__name__)
@@ -83,10 +84,16 @@ class QuerySiteAndUpdateUITask(QtCore.QThread):
         """
         QtCore.QThread.__init__(self, parent)
         self._url_to_test = ""
+        self._method = None
         self._sso_enabled = False
         self._unified_login_flow_enabled = False
         self._unified_login_flow2_enabled = False
         self._http_proxy = http_proxy
+
+    @property
+    def method(self):
+        """returns: user authentication method."""
+        return self._method
 
     @property
     def sso_enabled(self):
@@ -123,6 +130,7 @@ class QuerySiteAndUpdateUITask(QtCore.QThread):
         """
         # The site information is cached, so those three calls do not add
         # any significant overhead.
+        self._method = _get_user_authentication_method(self.url_to_test, self._http_proxy)
         self._sso_enabled = is_sso_enabled_on_site(self.url_to_test, self._http_proxy)
         self._autodesk_identity_enabled = is_autodesk_identity_enabled_on_site(
             self.url_to_test, self._http_proxy
