@@ -489,6 +489,7 @@ class MetricsDispatchWorkerThread(Thread):
 
         for metric in metrics:
             data = metric.data
+            print("\n\nsend metric:", data, "\n")
             # As second pass re-structure unsupported events from supported groups
             # (see more complete comment below)
             if metric.is_supported_event:

@@ -84,6 +84,7 @@ def consume():
     lock.acquire()
     try:
         for item in _get_instance():
+            print("add log")
             metrics.EventMetric.log(*item[0], **item[1])
 
         # Cleanup because, after all, once tk-desktop starts, this becomes useless
@@ -91,3 +92,7 @@ def consume():
         del os.__sgtk_pending_events_lock
     finally:
         lock.release()
+
+    print()
+    print()
+    input("Consume is done. Press enter to continue")

@@ -77,6 +77,7 @@ def _get_ui_state():
     Returns the state of UI: do we have a ui or not.
     :returns: True or False)
     """
+    return False
     if QtGui and QtGui.QApplication.instance() is not None:
         return True
     else:
