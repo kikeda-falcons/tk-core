@@ -37,11 +37,9 @@ from .sso_saml2 import (
     SsoSaml2IncompletePySide2,
     SsoSaml2Toolkit,
     SsoSaml2MissingQtModuleError,
-    is_autodesk_identity_enabled_on_site,
-    is_sso_enabled_on_site,
-    is_unified_login_flow_enabled_on_site,
-    is_unified_login_flow2_enabled_on_site,
 )
+from .sso_saml2 import utils as site_config
+
 from .. import LogManager
 
 logger = LogManager.get_logger(__name__)
@@ -124,15 +122,15 @@ class QuerySiteAndUpdateUITask(QtCore.QThread):
         """
         # The site information is cached, so those three calls do not add
         # any significant overhead.
-        self._sso_enabled = is_sso_enabled_on_site(self.url_to_test, self._http_proxy)
-        self._autodesk_identity_enabled = is_autodesk_identity_enabled_on_site(
+        self._sso_enabled = site_config.is_sso_enabled_on_site(self.url_to_test, self._http_proxy)
+        self._autodesk_identity_enabled = site_config.is_autodesk_identity_enabled_on_site(
             self.url_to_test, self._http_proxy
         )
-        self._unified_login_flow_enabled = is_unified_login_flow_enabled_on_site(
+        self._unified_login_flow_enabled = site_config.is_unified_login_flow_enabled_on_site(
             self.url_to_test, self._http_proxy
         )
 
-        self._unified_login_flow2_enabled = is_unified_login_flow2_enabled_on_site(
+        self._unified_login_flow2_enabled = site_config.is_unified_login_flow2_enabled_on_site(
             self.url_to_test, self._http_proxy
         )
 
