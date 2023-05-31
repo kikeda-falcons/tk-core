@@ -11,6 +11,7 @@
 import json
 import os
 import platform
+import sys
 import time
 
 from tank_vendor import six
@@ -183,6 +184,10 @@ def get_product_name():
             product+= " {version}".format(**engine.host_info)
 
         return product
+
+    # current_engine is not set in SGD at login time...
+    if os.path.splitext(os.path.basename(sys.argv[0]))[0].lower() == "shotgun":
+        return "ShotGrid Desktop"
 
     # Fallback to default/worst case value
     return "ShotGrid Toolkit"
