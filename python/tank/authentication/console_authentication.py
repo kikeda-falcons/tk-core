@@ -29,11 +29,7 @@ from .errors import (
     ConsoleLoginNotSupportedError,
 )
 from tank_vendor.shotgun_api3 import MissingTwoFactorAuthenticationFault
-from .sso_saml2 import (
-    is_sso_enabled_on_site,
-    is_unified_login_flow2_enabled_on_site,
-    is_autodesk_identity_enabled_on_site,
-)
+from .sso_saml2 import utils as site_config
 from . import unified_login_flow2
 from ..util.shotgun.connection import sanitize_url
 
@@ -50,12 +46,12 @@ def _assert_console_session_is_supported(hostname, http_proxy):
     username/password pair is not supported by the Shotgun server.
     Which is the case when using SSO or Autodesk Identity.
     """
-    if is_unified_login_flow2_enabled_on_site(hostname, http_proxy):
+    if site_config.is_unified_login_flow2_enabled_on_site(hostname, http_proxy):
         # OK we support that in console
         pass
-    elif is_sso_enabled_on_site(hostname, http_proxy):
+    elif site_config.is_sso_enabled_on_site(hostname, http_proxy):
         raise ConsoleLoginNotSupportedError(hostname, "Single Sign-On")
-    elif is_autodesk_identity_enabled_on_site(hostname, http_proxy):
+    elif site_config.is_autodesk_identity_enabled_on_site(hostname, http_proxy):
         raise ConsoleLoginNotSupportedError(hostname, "Autodesk Identity")
 
 
@@ -181,12 +177,12 @@ class ConsoleAuthenticationHandlerBase(object):
         return session_info
 
     def _get_auth_method(self, hostname, http_proxy):
-        if not is_unified_login_flow2_enabled_on_site(hostname, http_proxy):
+        if not site_config.is_unified_login_flow2_enabled_on_site(hostname, http_proxy):
             return self._authenticate_legacy
 
-        if is_autodesk_identity_enabled_on_site(
+        if site_config.is_autodesk_identity_enabled_on_site(
             hostname, http_proxy
-        ) or is_sso_enabled_on_site(hostname, http_proxy):
+        ) or site_config.is_sso_enabled_on_site(hostname, http_proxy):
             return self._authenticate_unified_login_flow2
 
         # We have 2 choices here
