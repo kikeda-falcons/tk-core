@@ -20,7 +20,10 @@ from ...util.shotgun import download
 
 log = LogManager.get_logger(__name__)
 
-ACCESS_TOKEN = "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"
+# These constant variables are used to retrieve GitHub access token 
+# to access our private repository.
+ENTITY_TYPE = "CustomNonProjectEntity09"  # Secret entity
+ENTITY_ID = 1  # "GitHub Access Token" as Secret Name
 
 
 class IODescriptorGithubRelease(IODescriptorDownloadable):
@@ -96,14 +99,36 @@ class IODescriptorGithubRelease(IODescriptorDownloadable):
             version=self.get_version(),
         )
 
+        token = self._get_github_access_token()
+        log.info("TOKEN is {}".format(token))
+        
         try:
             download.download_and_unpack_url(
-                self._sg_connection, url, destination_path, auto_detect_bundle=True, token=ACCESS_TOKEN
+                self._sg_connection, url, destination_path, auto_detect_bundle=True, token=token
             )
         except TankError as e:
             raise TankDescriptorError(
                 "Failed to download %s from %s. Error: %s" % (self, url, e)
             )
+        
+    def _get_github_access_token(self):
+        """
+        Fetches the value of sg_key field from ShotGrid.
+
+        Note: This method assumes you have an active Shotgun connection (self._sg_connection).
+        """
+        access_token = None
+        
+        try:
+            entity = self._sg_connection.find_one(
+                ENTITY_TYPE, [["id", "is", ENTITY_ID]], fields=["sg_key"]
+            )
+            if entity:
+                access_token = entity.get("sg_key")
+        except Exception as e:
+            log.error("Failed to retrieve sg_key field on {}: {}".format(ENTITY_TYPE, e))
+
+        return access_token
 
     def _get_github_releases(self, latest_only=False, url=None):
         """
