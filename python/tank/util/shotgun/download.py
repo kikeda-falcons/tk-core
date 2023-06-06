@@ -31,7 +31,7 @@ log = LogManager.get_logger(__name__)
 
 
 @LogManager.log_timing
-def download_url(sg, url, location, use_url_extension=False):
+def download_url(sg, url, location, use_url_extension=False, token=None):
     """
     Convenience method that downloads a file from a given url.
     This method will take into account any proxy settings which have
@@ -58,6 +58,7 @@ def download_url(sg, url, location, use_url_extension=False):
                                    to construct the full path name to the downloaded
                                    contents. The newly constructed full path name
                                    will be returned.
+    :param token: Personal access token for authorization header
 
     :returns: Full filepath to the downloaded file. This may have been altered from
               the input ``location`` if ``use_url_extension`` is True and a file extension
@@ -84,6 +85,11 @@ def download_url(sg, url, location, use_url_extension=False):
     # download the given url
     try:
         request = urllib.request.Request(url)
+
+        # Add authorization header if token is provided
+        if token:
+            request.add_header("Authorization", "Bearer {}".format(token))
+
         if timeout and sys.version_info >= (2, 6):
             # timeout parameter only available in python 2.6+
             response = urllib.request.urlopen(request, timeout=timeout)
@@ -182,7 +188,7 @@ def download_and_unpack_attachment(
     )
 
 
-def download_and_unpack_url(sg, url, target, retries=5, auto_detect_bundle=False):
+def download_and_unpack_url(sg, url, target, retries=5, auto_detect_bundle=False, token=None):
     """
     Downloads the content from the provided url, assumes it is a zip file
     and attempts to unpack it into the given location.
@@ -196,14 +202,15 @@ def download_and_unpack_url(sg, url, target, retries=5, auto_detect_bundle=False
         (config, app, engine, framework) and that this should be attempted to be
         detected and unpacked intelligently. For example, if the zip file contains
         the bundle in a subfolder, this should be correctly unfolded.
+    :param token: Personal access token for authorization header
     :raises: ShotgunAttachmentDownloadError on failure
     """
-    return _download_and_unpack(sg, target, retries, auto_detect_bundle, url=url)
+    return _download_and_unpack(sg, target, retries, auto_detect_bundle, url=url, token=token)
 
 
 @LogManager.log_timing
 def _download_and_unpack(
-    sg, target, retries, auto_detect_bundle, attachment_id=None, url=None
+    sg, target, retries, auto_detect_bundle, attachment_id=None, url=None, token=None
 ):
     """
     Downloads the given attachment from Shotgun if an attachment ID is provided,
@@ -220,6 +227,7 @@ def _download_and_unpack(
         the bundle in a subfolder, this should be correctly unfolded.
     :param attachment_id: Attachment to download
     :param url: The url to download from
+    :param token: Personal access token for authorization header
     :raises: ShotgunAttachmentDownloadError on failure
     """
     # @todo: progress feedback here - when the SG api supports it!
@@ -243,7 +251,7 @@ def _download_and_unpack(
                     fh.write(bundle_content)
             elif url:
                 log.debug("Downloading content of url %s..." % url)
-                download_url(sg, url, zip_tmp)
+                download_url(sg, url, zip_tmp, token=token)
             else:
                 raise ValueError(
                     "A value is required for one of kwargs `url` or `attachment_id`"

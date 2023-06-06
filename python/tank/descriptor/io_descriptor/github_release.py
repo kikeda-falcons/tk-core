@@ -20,6 +20,8 @@ from ...util.shotgun import download
 
 log = LogManager.get_logger(__name__)
 
+ACCESS_TOKEN = "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"
+
 
 class IODescriptorGithubRelease(IODescriptorDownloadable):
     """
@@ -96,7 +98,7 @@ class IODescriptorGithubRelease(IODescriptorDownloadable):
 
         try:
             download.download_and_unpack_url(
-                self._sg_connection, url, destination_path, auto_detect_bundle=True
+                self._sg_connection, url, destination_path, auto_detect_bundle=True, token=ACCESS_TOKEN
             )
         except TankError as e:
             raise TankDescriptorError(
